@@ -1,0 +1,9 @@
+[auth.email]
+enable_confirmations = true
+
+[auth.phone]
+enable_confirmations = false
+
+[inbucket]
+sender_name = "Flash AI - GShah Development"
+admin_email = "no-reply@example.com"

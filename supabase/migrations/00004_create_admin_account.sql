@@ -1,0 +1,3 @@
+-- Intentionally does not seed an administrator account.
+-- Bootstrap the first administrator manually after creating and verifying
+-- the intended owner account; never ship default credentials in a migration.

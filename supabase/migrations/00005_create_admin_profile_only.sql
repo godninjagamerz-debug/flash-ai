@@ -1,0 +1,1 @@
+-- Administrator privileges are assigned manually by the project owner.

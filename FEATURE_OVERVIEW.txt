@@ -1,0 +1,224 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    🔄 ACCOUNT RESET FEATURE - OVERVIEW                       ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                              ADMIN INTERFACE                                 │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Admin Panel → Users Tab                                                    │
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────────┐    │
+│  │ ☐ Select all users  │  [Reset All] [Reset Selected (3)] [Clear]   │    │
+│  └────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────────┐    │
+│  │ ☐  John Doe                                          [View] [🔄]   │    │
+│  │    john@example.com | Free Plan | User                             │    │
+│  └────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────────┐    │
+│  │ ☐  Jane Smith                                        [View] [🔄]   │    │
+│  │    jane@example.com | Pro Plan | User                              │    │
+│  └────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────────┐    │
+│  │    Admin User                                        [View]         │    │
+│  │    admin@example.com | Business Plan | Admin                       │    │
+│  └────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                          CONFIRMATION DIALOG                                 │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  ⚠️  Confirm Account Reset                                            [X]   │
+│                                                                              │
+│  You are about to reset ALL user accounts (except admins).                 │
+│                                                                              │
+│  This will permanently delete:                                              │
+│  • All conversations                                                        │
+│  • All messages                                                             │
+│  • All chat history                                                         │
+│                                                                              │
+│  User profiles, plans, and roles will be preserved.                        │
+│                                                                              │
+│  [Cancel]                                    [Continue]                     │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                           MESSAGE INPUT DIALOG                               │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Message for Users                                                    [X]   │
+│                                                                              │
+│  Enter a message that will be displayed to affected users when they        │
+│  log in. This helps them understand why their account was reset.           │
+│                                                                              │
+│  Reset Notification Message:                                               │
+│  ┌────────────────────────────────────────────────────────────────────┐   │
+│  │ Your account has been reset due to OAuth system updates.          │   │
+│  │ Your profile and plan remain unchanged. Please start a new        │   │
+│  │ conversation to continue using Flash AI.                          │   │
+│  │                                                                    │   │
+│  │                                                                    │   │
+│  └────────────────────────────────────────────────────────────────────┘   │
+│  156 characters                                                            │
+│                                                                              │
+│  Preview:                                                                   │
+│  ┌────────────────────────────────────────────────────────────────────┐   │
+│  │ Your account has been reset due to OAuth system updates.          │   │
+│  │ Your profile and plan remain unchanged. Please start a new        │   │
+│  │ conversation to continue using Flash AI.                          │   │
+│  └────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  [Cancel]                                    [🔄 Reset Accounts]            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                          USER NOTIFICATION                                   │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  ⚠️  Account Reset Notice                                            [X]   │
+│                                                                              │
+│  Your account was reset on Nov 23, 2025, 2:30 PM                          │
+│                                                                              │
+│  Message from Administrator:                                               │
+│  ┌────────────────────────────────────────────────────────────────────┐   │
+│  │ Your account has been reset due to OAuth system updates.          │   │
+│  │ Your profile and plan remain unchanged. Please start a new        │   │
+│  │ conversation to continue using Flash AI.                          │   │
+│  └────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  What was reset:                                                           │
+│  • All conversations and chat history                                      │
+│  • All messages                                                            │
+│                                                                              │
+│  What was preserved:                                                       │
+│  • Your profile and account settings                                       │
+│  • Your subscription plan                                                  │
+│  • Your account role and permissions                                       │
+│                                                                              │
+│  [I Understand]                                                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                            FEATURE SUMMARY                                   │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+✅ RESET OPTIONS
+   • Reset All Accounts (except admins)
+   • Reset Single Account
+   • Reset Multiple Selected Accounts
+
+✅ ADMIN FEATURES
+   • Bulk action buttons
+   • User selection checkboxes
+   • Individual reset buttons
+   • Confirmation dialogs
+   • Custom message input
+   • Live message preview
+   • Success notifications
+
+✅ USER FEATURES
+   • Full-screen notification
+   • Admin's custom message
+   • Clear explanation of changes
+   • One-time display
+   • Easy dismissal
+
+✅ SECURITY
+   • Admin-only access
+   • Admin accounts protected
+   • Database-level enforcement
+   • Audit trail maintained
+   • RLS policies active
+
+✅ DATA MANAGEMENT
+   Deleted:
+   • All conversations
+   • All messages
+   • All chat history
+   • All session data
+
+   Preserved:
+   • User profile
+   • Subscription plan
+   • Account role
+   • Upload limits
+   • Creation date
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                         TECHNICAL IMPLEMENTATION                             │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+📁 DATABASE
+   • reset_notifications table
+   • reset_user_account() function
+   • reset_all_accounts_except_admins() function
+   • reset_multiple_accounts() function
+   • get_reset_notification() function
+   • mark_notification_read() function
+
+📁 API LAYER
+   • accountResetApi.resetUserAccount()
+   • accountResetApi.resetAllAccountsExceptAdmins()
+   • accountResetApi.resetMultipleAccounts()
+   • accountResetApi.getResetNotification()
+   • accountResetApi.markNotificationRead()
+
+📁 UI COMPONENTS
+   • Admin.tsx - Reset UI and handlers
+   • ResetNotification.tsx - User notification
+   • App.tsx - Notification integration
+
+📁 DOCUMENTATION
+   • ACCOUNT_RESET_GUIDE.md (15KB)
+   • ACCOUNT_RESET_SUMMARY.md (5KB)
+   • IMPLEMENTATION_SUMMARY.md (9KB)
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                              USE CASES                                       │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+1️⃣  OAuth System Updates
+    Scenario: Migrating authentication providers
+    Action: Reset all accounts with explanation message
+    Result: Users log in with new system, see notification
+
+2️⃣  System Maintenance
+    Scenario: Major database migration or update
+    Action: Reset affected accounts after maintenance
+    Result: Users get fresh start with preserved profiles
+
+3️⃣  Individual User Request
+    Scenario: User wants to start over
+    Action: Reset single account with personalized message
+    Result: User gets clean slate while keeping plan
+
+4️⃣  Bulk User Management
+    Scenario: Reset specific user group (e.g., test accounts)
+    Action: Select users and reset with group message
+    Result: Selected users reset, others unaffected
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                              STATUS                                          │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+✅ Feature Complete
+✅ Fully Tested
+✅ Production Ready
+✅ Documentation Complete
+✅ Security Enforced
+✅ Zero Errors
+
+Version: 2.3.0
+Last Updated: 2025-11-23
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    🎉 READY FOR PRODUCTION USE                               ║
+╚══════════════════════════════════════════════════════════════════════════════╝
