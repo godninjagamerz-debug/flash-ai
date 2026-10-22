@@ -1,60 +1,27 @@
-export interface ImageAttachment {
-  data: string;
-  mimeType: string;
-  name: string;
-}
-
-export interface MediaContent {
-  type: 'image' | 'video';
-  url?: string;
-  data?: string;
-  mimeType?: string;
-  name?: string;
-}
-
-export interface Message {
-  id: string;
-  role: 'user' | 'model';
-  content: string;
-  timestamp: number;
-  images?: ImageAttachment[];
-  media?: MediaContent;
-}
-
 export interface ApiPart {
   text?: string;
   inlineData?: {
     mimeType: string;
     data: string;
   };
+  [key: string]: any;
 }
 
 export interface ApiContent {
-  role: 'user' | 'model';
+  role: 'user' | 'model' | 'system';
   parts: ApiPart[];
 }
 
-export interface ApiRequest {
-  contents: ApiContent[];
-  generationConfig?: {
-    temperature?: number;
-    topK?: number;
-    topP?: number;
-    maxOutputTokens?: number;
-  };
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'model';
+  content: string;
+  timestamp: string;
 }
 
-export interface ApiResponseCandidate {
-  content: {
-    role: string;
-    parts: Array<{
-      text: string;
-    }>;
-  };
-  finishReason?: string;
-  index?: number;
-}
-
-export interface ApiResponse {
-  candidates: ApiResponseCandidate[];
+export interface ConversationSession {
+  id: string;
+  title: string;
+  messages: ChatMessage[];
+  updatedAt: number;
 }

@@ -13,8 +13,6 @@ import {
   Key,
   Eye,
   EyeOff,
-  User,
-  Trash2,
   AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -144,7 +142,6 @@ export default function Settings() {
   const handleSignOutAllOther = async () => {
     if (!confirm('Sign out all other devices? You will remain signed in on this device.')) return;
 
-    // Get current session (first one is usually current)
     const currentSessionId = sessions[0]?.id;
     if (!currentSessionId) {
       toast({
@@ -220,127 +217,130 @@ export default function Settings() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-      <header className="border-b-2 border-border/50 bg-gradient-to-r from-card to-card/95 shadow-2xl sticky top-0 z-10 backdrop-blur-xl">
-        <div className="container mx-auto px-4 xl:px-6 py-5 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 overflow-x-hidden w-full">
+      <header className="border-b-2 border-border/50 bg-gradient-to-r from-card to-card/95 shadow-md sticky top-0 z-10 backdrop-blur-xl">
+        <div className="container mx-auto px-3 sm:px-4 xl:px-6 py-3.5 flex items-center justify-between gap-2 max-w-full">
+          <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
             <Button
               variant="outline"
               size="sm"
               onClick={() => navigate('/')}
-              className="mr-2 hover:scale-105 transition-all border-2"
+              className="hover:scale-105 transition-all border-2 shrink-0 h-8 px-2 text-xs"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Chat
+              <ArrowLeft className="w-3.5 h-3.5 mr-1" />
+              <span className="hidden xs:inline">Back</span>
             </Button>
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/80 flex items-center justify-center shadow-2xl shadow-primary/30 animate-float">
-              <SettingsIcon className="w-7 h-7 text-primary-foreground" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-primary via-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/30 shrink-0">
+              <SettingsIcon className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
             </div>
-            <div>
-              <h1 className="text-2xl font-bold gradient-text">Settings</h1>
-              <p className="text-sm text-muted-foreground font-medium">Manage your account and security</p>
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-xl font-bold gradient-text truncate">Settings</h1>
+              <p className="text-xs text-muted-foreground truncate hidden sm:block">Manage your account and security</p>
             </div>
           </div>
           <ThemeToggle />
         </div>
       </header>
 
-      <div className="container mx-auto px-4 xl:px-6 py-8 max-w-6xl">
+      <div className="container mx-auto px-3 sm:px-4 xl:px-6 py-6 max-w-5xl w-full">
         <Tabs defaultValue="security" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 xl:grid-cols-3 mb-8 h-auto p-1 bg-card border-2 border-border/50 rounded-2xl">
-            <TabsTrigger
-              value="security"
-              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground rounded-xl py-3 font-bold text-[15px]"
-            >
-              <Shield className="w-4 h-4 mr-2" />
-              Security
-            </TabsTrigger>
-            <TabsTrigger
-              value="password"
-              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground rounded-xl py-3 font-bold text-[15px]"
-            >
-              <Key className="w-4 h-4 mr-2" />
-              Password
-            </TabsTrigger>
-            {profile.role === 'admin' && (
+          <div className="w-full overflow-x-auto no-scrollbar pb-2">
+            <TabsList className="inline-flex w-full sm:w-auto justify-start gap-1 p-1 bg-card border-2 border-border/50 rounded-xl min-w-full sm:min-w-0">
               <TabsTrigger
-                value="admin-sessions"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-primary-foreground rounded-xl py-3 font-bold text-[15px]"
+                value="security"
+                className="flex-1 sm:flex-initial data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg py-2 px-4 font-semibold text-xs sm:text-sm whitespace-nowrap"
               >
-                <Globe className="w-4 h-4 mr-2" />
-                All Sessions
+                <Shield className="w-3.5 h-3.5 mr-1.5" />
+                Security
               </TabsTrigger>
-            )}
-          </TabsList>
+              <TabsTrigger
+                value="password"
+                className="flex-1 sm:flex-initial data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg py-2 px-4 font-semibold text-xs sm:text-sm whitespace-nowrap"
+              >
+                <Key className="w-3.5 h-3.5 mr-1.5" />
+                Password
+              </TabsTrigger>
+              {profile.role === 'admin' && (
+                <TabsTrigger
+                  value="admin-sessions"
+                  className="flex-1 sm:flex-initial data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg py-2 px-4 font-semibold text-xs sm:text-sm whitespace-nowrap"
+                >
+                  <Globe className="w-3.5 h-3.5 mr-1.5" />
+                  All Sessions
+                </TabsTrigger>
+              )}
+            </TabsList>
+          </div>
 
           {/* Security Tab - Device Management */}
-          <TabsContent value="security" className="space-y-6">
-            <Card className="border-2 border-border/50 bg-gradient-to-br from-card to-card/95 shadow-2xl">
-              <CardHeader>
-                <div className="flex items-center justify-between">
+          <TabsContent value="security" className="space-y-6 mt-4">
+            <Card className="border-2 border-border/50 bg-card shadow-lg">
+              <CardHeader className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <CardTitle className="text-2xl font-bold gradient-text">Active Devices</CardTitle>
-                    <CardDescription className="text-[15px] mt-1">
+                    <CardTitle className="text-xl sm:text-2xl font-bold gradient-text">Active Devices</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm mt-0.5">
                       Manage devices where you're currently signed in
                     </CardDescription>
                   </div>
                   {sessions.length > 1 && (
                     <Button
                       variant="outline"
+                      size="sm"
                       onClick={handleSignOutAllOther}
-                      className="border-2 hover:bg-destructive/10 hover:border-destructive/50 hover:scale-105 transition-all"
+                      className="border-2 hover:bg-destructive/10 hover:border-destructive/50 text-xs shrink-0 self-start sm:self-auto"
                     >
-                      <LogOut className="w-4 h-4 mr-2" />
+                      <LogOut className="w-3.5 h-3.5 mr-1.5" />
                       Sign Out All Others
                     </Button>
                   )}
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
                 {isLoading ? (
-                  <div className="flex flex-col items-center justify-center py-12">
-                    <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-                    <p className="text-muted-foreground font-medium">Loading devices...</p>
+                  <div className="flex flex-col items-center justify-center py-8">
+                    <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin mb-3" />
+                    <p className="text-xs text-muted-foreground font-medium">Loading devices...</p>
                   </div>
                 ) : sessions.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Smartphone className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-                    <p className="text-muted-foreground font-medium">No active sessions found</p>
+                  <div className="text-center py-8">
+                    <Smartphone className="w-12 h-12 text-muted-foreground/30 mx-auto mb-2" />
+                    <p className="text-xs text-muted-foreground font-medium">No active sessions found</p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {sessions.map((session, index) => (
                       <div
                         key={session.id}
-                        className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 p-5 border-2 border-border/50 rounded-2xl hover:bg-gradient-to-r hover:from-primary/5 hover:to-accent/5 transition-all hover:shadow-lg hover:border-primary/30 group"
+                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border border-border/60 rounded-xl bg-card/60 transition-all hover:border-primary/30"
                       >
-                        <div className="flex items-start gap-4 flex-1">
-                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0">
+                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                             {getDeviceIcon(session.user_agent)}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-bold text-[16px] text-foreground">
+                            <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                              <h3 className="font-semibold text-sm text-foreground truncate">
                                 {getDeviceName(session.user_agent)}
                               </h3>
                               {index === 0 && (
-                                <Badge variant="default" className="text-xs font-bold">
-                                  Current Device
+                                <Badge variant="default" className="text-[10px] py-0 px-1.5 h-4 font-bold">
+                                  Current
                                 </Badge>
                               )}
                             </div>
-                            <div className="space-y-1">
+                            <div className="space-y-0.5 text-xs text-muted-foreground">
                               {session.ip_address && (
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  <Globe className="w-4 h-4" />
+                                <div className="flex items-center gap-1.5">
+                                  <Globe className="w-3.5 h-3.5" />
                                   <span className="font-mono">{session.ip_address}</span>
                                 </div>
                               )}
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Clock className="w-4 h-4" />
+                              <div className="flex items-center gap-1.5">
+                                <Clock className="w-3.5 h-3.5" />
                                 <span>Last active {formatLastActive(session.last_active)}</span>
                               </div>
-                              <p className="text-xs text-muted-foreground truncate">
+                              <p className="text-[11px] truncate">
                                 {session.user_agent || 'Unknown browser'}
                               </p>
                             </div>
@@ -351,9 +351,9 @@ export default function Settings() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleSignOutSession(session.id)}
-                            className="border-2 hover:bg-destructive/10 hover:border-destructive/50 hover:scale-105 transition-all"
+                            className="border hover:bg-destructive/10 hover:border-destructive/50 text-xs self-end sm:self-center h-8"
                           >
-                            <LogOut className="w-4 h-4 mr-2" />
+                            <LogOut className="w-3.5 h-3.5 mr-1" />
                             Sign Out
                           </Button>
                         )}
@@ -366,18 +366,18 @@ export default function Settings() {
           </TabsContent>
 
           {/* Password Tab */}
-          <TabsContent value="password">
-            <Card className="border-2 border-border/50 bg-gradient-to-br from-card to-card/95 shadow-2xl">
-              <CardHeader>
-                <CardTitle className="text-2xl font-bold gradient-text">Change Password</CardTitle>
-                <CardDescription className="text-[15px] mt-1">
+          <TabsContent value="password" className="space-y-6 mt-4">
+            <Card className="border-2 border-border/50 bg-card shadow-lg">
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="text-xl sm:text-2xl font-bold gradient-text">Change Password</CardTitle>
+                <CardDescription className="text-xs sm:text-sm mt-0.5">
                   Update your password to keep your account secure
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <form onSubmit={handleChangePassword} className="space-y-6 max-w-md">
-                  <div className="space-y-2">
-                    <Label htmlFor="current-password" className="text-sm font-semibold">
+              <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
+                <form onSubmit={handleChangePassword} className="space-y-4 max-w-md w-full">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="current-password" className="text-xs font-semibold">
                       Current Password
                     </Label>
                     <div className="relative">
@@ -387,7 +387,7 @@ export default function Settings() {
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
                         required
-                        className="pr-10 h-12 border-2 rounded-xl text-[15px]"
+                        className="pr-10 h-10 border text-xs sm:text-sm"
                         placeholder="Enter current password"
                       />
                       <Button
@@ -395,19 +395,15 @@ export default function Settings() {
                         variant="ghost"
                         size="sm"
                         onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
+                        className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
                       >
-                        {showCurrentPassword ? (
-                          <EyeOff className="w-4 h-4" />
-                        ) : (
-                          <Eye className="w-4 h-4" />
-                        )}
+                        {showCurrentPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                       </Button>
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="new-password" className="text-sm font-semibold">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="new-password" className="text-xs font-semibold">
                       New Password
                     </Label>
                     <div className="relative">
@@ -418,27 +414,23 @@ export default function Settings() {
                         onChange={(e) => setNewPassword(e.target.value)}
                         required
                         minLength={8}
-                        className="pr-10 h-12 border-2 rounded-xl text-[15px]"
-                        placeholder="Enter new password (min 8 characters)"
+                        className="pr-10 h-10 border text-xs sm:text-sm"
+                        placeholder="Min 8 characters"
                       />
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
                         onClick={() => setShowNewPassword(!showNewPassword)}
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
+                        className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
                       >
-                        {showNewPassword ? (
-                          <EyeOff className="w-4 h-4" />
-                        ) : (
-                          <Eye className="w-4 h-4" />
-                        )}
+                        {showNewPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                       </Button>
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="confirm-password" className="text-sm font-semibold">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="confirm-password" className="text-xs font-semibold">
                       Confirm New Password
                     </Label>
                     <div className="relative">
@@ -449,7 +441,7 @@ export default function Settings() {
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         required
                         minLength={8}
-                        className="pr-10 h-12 border-2 rounded-xl text-[15px]"
+                        className="pr-10 h-10 border text-xs sm:text-sm"
                         placeholder="Confirm new password"
                       />
                       <Button
@@ -457,13 +449,9 @@ export default function Settings() {
                         variant="ghost"
                         size="sm"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
+                        className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
                       >
-                        {showConfirmPassword ? (
-                          <EyeOff className="w-4 h-4" />
-                        ) : (
-                          <Eye className="w-4 h-4" />
-                        )}
+                        {showConfirmPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                       </Button>
                     </div>
                   </div>
@@ -471,112 +459,93 @@ export default function Settings() {
                   <Button
                     type="submit"
                     disabled={isChangingPassword}
-                    className="w-full h-12 bg-gradient-to-r from-primary to-primary/80 hover:from-primary hover:to-primary/90 shadow-lg hover:shadow-xl transition-all hover:scale-105 font-bold text-[15px]"
+                    className="w-full h-11 bg-primary text-primary-foreground font-semibold text-xs sm:text-sm mt-2"
                   >
-                    {isChangingPassword ? (
-                      <>
-                        <div className="w-5 h-5 border-3 border-primary-foreground border-t-transparent rounded-full animate-spin mr-2" />
-                        Changing Password...
-                      </>
-                    ) : (
-                      <>
-                        <Key className="w-5 h-5 mr-2" />
-                        Change Password
-                      </>
-                    )}
+                    {isChangingPassword ? 'Changing Password...' : 'Change Password'}
                   </Button>
                 </form>
               </CardContent>
             </Card>
 
             {/* Delete Account Section */}
-            <Card className="border-2 border-destructive/50 bg-gradient-to-br from-card to-destructive/5 shadow-2xl mt-6">
-              <CardHeader>
-                <CardTitle className="text-2xl font-bold text-destructive flex items-center gap-2">
-                  <AlertTriangle className="w-6 h-6" />
+            <Card className="border border-destructive/40 bg-card shadow-lg mt-4">
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="text-lg sm:text-xl font-bold text-destructive flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5" />
                   Danger Zone
                 </CardTitle>
-                <CardDescription className="text-[15px] mt-1">
+                <CardDescription className="text-xs sm:text-sm">
                   Irreversible actions that will permanently affect your account
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="p-4 bg-destructive/10 border-2 border-destructive/30 rounded-xl">
-                    <h3 className="font-bold text-[15px] text-destructive mb-2 flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4" />
-                      Warning: This action is permanent
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      Once you delete your account, there is no going back. All your data, conversations, 
-                      and settings will be permanently removed from our servers.
-                    </p>
-                  </div>
-
-                  <DeleteAccountDialog 
-                    userId={profile.id} 
-                    username={profile.username || profile.email || undefined}
-                  />
+              <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0 space-y-3">
+                <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-xl">
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Once you delete your account, there is no going back. All your data, conversations, 
+                    and settings will be permanently removed.
+                  </p>
                 </div>
+
+                <DeleteAccountDialog 
+                  userId={profile.id} 
+                  username={profile.username || profile.email || undefined}
+                />
               </CardContent>
             </Card>
           </TabsContent>
 
           {/* Admin Sessions Tab */}
           {profile.role === 'admin' && (
-            <TabsContent value="admin-sessions">
-              <Card className="border-2 border-border/50 bg-gradient-to-br from-card to-card/95 shadow-2xl">
-                <CardHeader>
-                  <CardTitle className="text-2xl font-bold gradient-text">All User Sessions</CardTitle>
-                  <CardDescription className="text-[15px] mt-1">
-                    View all active sessions across all users with IP addresses
+            <TabsContent value="admin-sessions" className="space-y-6 mt-4">
+              <Card className="border-2 border-border/50 bg-card shadow-lg">
+                <CardHeader className="p-4 sm:p-6">
+                  <CardTitle className="text-xl sm:text-2xl font-bold gradient-text">All User Sessions</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">
+                    View active sessions across all accounts
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
                   {isLoading ? (
-                    <div className="flex flex-col items-center justify-center py-12">
-                      <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-                      <p className="text-muted-foreground font-medium">Loading sessions...</p>
+                    <div className="flex flex-col items-center justify-center py-8">
+                      <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin mb-3" />
+                      <p className="text-xs text-muted-foreground">Loading sessions...</p>
                     </div>
                   ) : allSessions.length === 0 ? (
-                    <div className="text-center py-12">
-                      <Globe className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-                      <p className="text-muted-foreground font-medium">No active sessions found</p>
+                    <div className="text-center py-8">
+                      <Globe className="w-12 h-12 text-muted-foreground/30 mx-auto mb-2" />
+                      <p className="text-xs text-muted-foreground">No active sessions found</p>
                     </div>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       {allSessions.map((session) => (
                         <div
                           key={session.id}
-                          className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 p-5 border-2 border-border/50 rounded-2xl hover:bg-gradient-to-r hover:from-primary/5 hover:to-accent/5 transition-all hover:shadow-lg hover:border-primary/30"
+                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border border-border/50 rounded-xl"
                         >
-                          <div className="flex items-start gap-4 flex-1">
-                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0">
+                          <div className="flex items-start gap-3 flex-1 min-w-0">
+                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                               {getDeviceIcon(session.user_agent)}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h3 className="font-bold text-[16px] text-foreground">
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                <h3 className="font-semibold text-sm text-foreground truncate">
                                   {session.username || session.email || 'Unknown User'}
                                 </h3>
-                                <Badge variant="outline" className="text-xs font-semibold">
+                                <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-4">
                                   {getDeviceName(session.user_agent)}
                                 </Badge>
                               </div>
-                              <div className="space-y-1">
+                              <div className="space-y-0.5 text-xs text-muted-foreground">
                                 {session.ip_address && (
-                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <Globe className="w-4 h-4" />
-                                    <span className="font-mono font-bold text-primary">{session.ip_address}</span>
+                                  <div className="flex items-center gap-1.5">
+                                    <Globe className="w-3.5 h-3.5" />
+                                    <span className="font-mono text-primary">{session.ip_address}</span>
                                   </div>
                                 )}
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  <Clock className="w-4 h-4" />
+                                <div className="flex items-center gap-1.5">
+                                  <Clock className="w-3.5 h-3.5" />
                                   <span>Last active {formatLastActive(session.last_active)}</span>
                                 </div>
-                                <p className="text-xs text-muted-foreground truncate">
-                                  {session.user_agent || 'Unknown browser'}
-                                </p>
                               </div>
                             </div>
                           </div>

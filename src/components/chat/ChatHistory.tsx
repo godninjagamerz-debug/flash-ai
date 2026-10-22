@@ -99,50 +99,48 @@ export function ChatHistory({
     return (
       <div
         className={cn(
-          'group relative flex items-start gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-all',
+          'group relative flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-all min-w-0 w-full',
           isActive
             ? 'bg-primary/15 border border-primary/25 shadow-sm'
             : 'hover:bg-muted/60 border border-transparent'
         )}
         onClick={() => { if (!isRenaming) { onSelectConversation(conv.id); onClose(); } }}
       >
-        <MessageSquare className={cn(
-          'w-3.5 h-3.5 shrink-0 mt-0.5',
-          isActive ? 'text-primary' : 'text-muted-foreground'
-        )} />
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+          <MessageSquare className={cn(
+            'w-3.5 h-3.5 shrink-0',
+            isActive ? 'text-primary' : 'text-muted-foreground'
+          )} />
 
-        <div className="flex-1 min-w-0">
-          {isRenaming ? (
-            <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-              <input
-                ref={renameInputRef}
-                value={renameValue}
-                onChange={e => setRenameValue(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') submitRename(conv.id);
-                  if (e.key === 'Escape') setRenamingId(null);
-                }}
-                className="flex-1 min-w-0 text-[13px] bg-background border border-primary/40 rounded px-1.5 py-0.5 outline-none"
-              />
-              <button onClick={() => submitRename(conv.id)}
-                className="text-primary hover:text-primary/80 p-0.5 rounded">
-                <Check className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1 min-w-0">
-              <p className={cn(
-                'text-[13px] font-medium truncate leading-5 flex-1 min-w-0',
-                isActive ? 'text-primary' : 'text-foreground'
-              )}>
-                {conv.title}
-              </p>
-              {hasSystemPrompt && (
-                <FileText className="w-3 h-3 text-muted-foreground/60 shrink-0" aria-label="Has system prompt" />
-              )}
-            </div>
-          )}
-          <p className="text-[10px] text-muted-foreground mt-0.5">{formatDate(conv.updated_at)}</p>
+          <div className="min-w-0 flex-1">
+            {isRenaming ? (
+              <div className="flex items-center gap-1 min-w-0" onClick={e => e.stopPropagation()}>
+                <input
+                  ref={renameInputRef}
+                  value={renameValue}
+                  onChange={e => setRenameValue(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') submitRename(conv.id);
+                    if (e.key === 'Escape') setRenamingId(null);
+                  }}
+                  className="w-full min-w-0 text-[13px] bg-background border border-primary/40 rounded px-1.5 py-0.5 outline-none"
+                />
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 min-w-0">
+                <p className={cn(
+                  'text-[13px] font-medium truncate leading-tight flex-1 block',
+                  isActive ? 'text-primary font-semibold' : 'text-foreground'
+                )}>
+                  {conv.title}
+                </p>
+                {hasSystemPrompt && (
+                  <FileText className="w-3 h-3 text-muted-foreground/60 shrink-0" aria-label="Has system prompt" />
+                )}
+              </div>
+            )}
+            <p className="text-[10px] text-muted-foreground mt-0.5">{formatDate(conv.updated_at)}</p>
+          </div>
         </div>
 
         {/* Action buttons — visible on hover */}
@@ -195,7 +193,7 @@ export function ChatHistory({
       )}
 
       <aside className={cn(
-        'fixed md:static inset-y-0 left-0 z-50 w-72 bg-card border-r border-border/60 flex flex-col transition-transform duration-300 ease-out shadow-2xl md:shadow-none',
+        'fixed md:static inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-card border-r border-border/60 flex flex-col transition-transform duration-300 ease-out shadow-2xl md:shadow-none min-w-0',
         isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
       )}>
         {/* Header */}
@@ -240,8 +238,8 @@ export function ChatHistory({
         </div>
 
         {/* Conversation list */}
-        <ScrollArea className="flex-1 min-h-0">
-          <div className="px-2 pb-4">
+        <ScrollArea className="flex-1 min-h-0 w-full overflow-hidden">
+          <div className="px-2 pb-4 w-full min-w-0">
             {filtered.length === 0 ? (
               <div className="text-center py-10 px-4">
                 <MessageSquare className="w-10 h-10 mx-auto mb-3 text-muted-foreground/30" />
@@ -269,7 +267,7 @@ export function ChatHistory({
         </ScrollArea>
 
         {/* Quick Nav: Media & Files Hub */}
-        <div className="px-3 pt-2 pb-1 shrink-0">
+        <div className="px-3 pt-2 pb-3 shrink-0">
           <Button
             variant="outline"
             size="sm"

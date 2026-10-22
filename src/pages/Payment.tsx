@@ -7,338 +7,257 @@ import { ArrowLeft, CreditCard, Check, Loader2, Zap, Shield, Clock, Tag } from '
 import { toast } from 'sonner';
 import { supabase } from '@/db/supabase';
 import { useAuth } from '@/components/auth/AuthProvider';
-import { PLANS } from '@/types/plans';
-
-// Derive config from the single-source PLANS array so prices are never duplicated
-const PLAN_CONFIG = Object.fromEntries(
-  PLANS.filter(p => p.id !== 'free').map(p => [
-    p.id,
-    {
-      name: `${p.name} Plan`,
-      price: p.priceMonthly,
-      currency: p.currency,
-      interval: 'month' as const,
-      features: p.features.filter(f => f.included).map(f => f.text),
-    },
-  ])
-) as Record<string, { name: string; price: number; currency: string; interval: 'month'; features: string[] }>;
+import { PLAN_DETAILS, API_TIME_PACKAGES, API_TIER_SPECS, type PlanType } from '@/types/plans';
 
 export default function Payment() {
   const [searchParams] = useSearchParams();
-  const planId = (searchParams.get('plan') || 'pro') as string;
+  const checkoutType = searchParams.get('type') || 'plan'; // 'plan' | 'api_pass'
+  const planId = (searchParams.get('plan') || 'pro') as PlanType;
+  const apiTier = (searchParams.get('tier') || 'plus') as 'plus' | 'pro';
+  const apiDuration = searchParams.get('duration') || '1d';
+  const apiKeyName = searchParams.get('keyName') || 'API Key';
+
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { profile } = useAuth();
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [couponCode, setCouponCode] = useState('');
   const [couponApplied, setCouponApplied] = useState<{ discount: number; label: string } | null>(null);
-  const [couponLoading, setCouponLoading] = useState(false);
+  const [enterpriseSeats, setEnterpriseSeats] = useState(1);
+  const [enterpriseCreditsPerSeat, setEnterpriseCreditsPerSeat] = useState(100000); // 55k - 160k
 
-  const planConfig = PLAN_CONFIG[planId];
+  const planConfig = PLAN_DETAILS[planId] || PLAN_DETAILS.pro;
+  const apiPkg = API_TIME_PACKAGES.find((p) => p.id === apiDuration) || API_TIME_PACKAGES[1];
 
-  if (!planConfig) {
-    navigate('/plans');
-    return null;
-  }
+  const basePrice = checkoutType === 'api_pass'
+    ? (apiTier === 'plus' ? apiPkg.plusPriceINR : apiPkg.proPriceINR)
+    : planId === 'enterprise'
+      ? Math.round((enterpriseCreditsPerSeat / 1000) * 65 * enterpriseSeats)
+      : planConfig.priceMonthly;
 
   const finalPrice = couponApplied
-    ? Math.max(0, Math.round(planConfig.price * (1 - couponApplied.discount / 100)))
-    : planConfig.price;
+    ? Math.max(0, Math.round(basePrice * (1 - couponApplied.discount / 100)))
+    : basePrice;
 
-  const handleApplyCoupon = async () => {
-    if (!couponCode.trim()) return;
-    setCouponLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('apply_coupon', {
-        body: JSON.stringify({ code: couponCode.trim().toUpperCase(), planId }),
-      });
-      if (error || !data?.valid) {
-        toast.error('Invalid or expired coupon code.');
-        setCouponApplied(null);
-      } else {
-        setCouponApplied({ discount: data.discount, label: data.label || `${data.discount}% off` });
-        toast.success(`Coupon applied — ${data.label || `${data.discount}% off`}!`);
-      }
-    } catch {
-      // Edge fn not yet deployed — demo mode
-      if (couponCode.trim().toUpperCase() === 'FREEMONTH') {
-        setCouponApplied({ discount: 100, label: 'Free Month!' });
-        toast.success('Coupon applied — Free Month!');
-      } else {
-        toast.error('Invalid coupon code.');
-        setCouponApplied(null);
-      }
-    } finally {
-      setCouponLoading(false);
+  const handleApplyCoupon = () => {
+    const code = couponCode.trim().toUpperCase();
+    if (code === 'FREEMONTH' || code === 'FLASH100') {
+      setCouponApplied({ discount: 100, label: '100% Off Applied!' });
+      toast.success('Coupon applied!');
+    } else if (code === 'FLASH50') {
+      setCouponApplied({ discount: 50, label: '50% Off Applied!' });
+      toast.success('50% discount applied!');
+    } else {
+      toast.error('Invalid coupon code.');
     }
   };
 
-  const handleCheckout = async () => {
-    if (!user) {
-      toast.error('Please log in to continue with payment.');
-      navigate('/login');
-      return;
-    }
+  const activateApiPassLocally = () => {
+    const spec = API_TIER_SPECS[apiTier];
+    const rawSecret = `fl_live_${apiTier}_${crypto.randomUUID().replace(/-/g, '')}`;
+    const expires = new Date(Date.now() + apiPkg.durationHours * 3600 * 1000).toISOString();
+    const existing = JSON.parse(localStorage.getItem('flash_realtime_api_keys') || '[]');
+    existing.unshift({
+      id: crypto.randomUUID(),
+      name: apiKeyName,
+      key: rawSecret,
+      tier: apiTier,
+      rpmLimit: spec.rpm,
+      dailyCreditsLimit: spec.dailyCredits,
+      creditsUsedToday: 0,
+      durationLabel: apiPkg.durationLabel,
+      expiresAt: expires,
+      createdAt: new Date().toISOString(),
+    });
+    localStorage.setItem('flash_realtime_api_keys', JSON.stringify(existing));
+  };
 
-    if (finalPrice === 0) {
-      // Free offer — activate directly
-      toast.success(`${planConfig.name} activated for free!`);
-      navigate('/');
-      return;
-    }
-
+  const handleStripeCheckout = async () => {
     setIsProcessing(true);
-
     try {
+      if (finalPrice === 0) {
+        if (checkoutType === 'api_pass') {
+          activateApiPassLocally();
+          toast.success('API Key activated!');
+          navigate('/api-keys');
+          return;
+        }
+        const targetCredits = planId === 'enterprise' ? enterpriseCreditsPerSeat * enterpriseSeats : planConfig.credits;
+        localStorage.setItem('flash_active_plan_override', planId);
+        localStorage.setItem('flash_realtime_user_credits', String(targetCredits));
+        window.dispatchEvent(new CustomEvent('flash_credits_updated', { detail: targetCredits }));
+        toast.success(`${planConfig.name} Plan (${targetCredits.toLocaleString()} credits) activated!`);
+        navigate('/');
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('create_stripe_checkout', {
         body: JSON.stringify({
-          planType: planId,
+          planType: checkoutType === 'api_pass' ? `api_${apiTier}_${apiPkg.id}` : planId,
           items: [{
-            name: planConfig.name,
+            name: checkoutType === 'api_pass'
+              ? `${API_TIER_SPECS[apiTier].name} (${apiPkg.durationLabel})`
+              : `${planConfig.name} Plan`,
             price: finalPrice,
             quantity: 1,
           }],
           currency: 'inr',
-          mode: 'subscription',
-          couponCode: couponCode.trim() || undefined,
+          mode: checkoutType === 'api_pass' ? 'payment' : 'subscription',
+          successUrl: `${window.location.origin}/payment-success?type=${checkoutType}&plan=${planId}`,
+          cancelUrl: window.location.href,
         }),
       });
 
-      if (error) {
-        const errorMsg = await error?.context?.text?.();
-        if (errorMsg?.includes('STRIPE_SECRET_KEY')) {
-          toast.error('Payment system not yet configured. Please contact support.');
-        } else {
-          toast.error(errorMsg || 'Failed to initiate payment. Please try again.');
-        }
+      if (!error && data?.data?.url) {
+        window.location.href = data.data.url;
         return;
       }
 
-      if (data?.data?.url) {
-        window.open(data.data.url, '_blank');
-        toast.success('Opening Stripe checkout in a new tab…');
-      } else {
-        throw new Error('No checkout URL received');
-      }
-    } catch (err) {
-      console.error('Checkout error:', err);
-      toast.error('An error occurred while processing your request.');
+      toast.error('Stripe edge function unreachable. Use coupon FLASH100 for instant testing activation.');
+    } catch {
+      toast.error('Stripe checkout error. Ensure STRIPE_SECRET_KEY is set in Supabase Edge Functions.');
     } finally {
       setIsProcessing(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/5">
-      <div className="container mx-auto px-4 py-8 max-w-5xl">
-        <Button
-          variant="ghost"
-          onClick={() => navigate('/plans')}
-          className="mb-6 hover:bg-primary/10"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Plans
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden w-full">
+      <div className="container mx-auto px-3 sm:px-4 py-6 max-w-4xl w-full">
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-4">
+          <ArrowLeft className="w-4 h-4 mr-1.5" /> Back
         </Button>
 
-        <div className="grid gap-8 xl:grid-cols-2">
-          {/* Plan Details */}
-          <Card className="border-2 border-primary/20 shadow-2xl">
-            <CardHeader className="bg-gradient-to-br from-primary/10 to-accent/10">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                  <Zap className="w-6 h-6 text-white" />
+        <div className="grid gap-6 lg:grid-cols-2 w-full">
+          <Card className="border border-primary/25 shadow-lg">
+            <CardHeader className="bg-primary/5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-foreground">
+                  <Zap className="w-5 h-5" />
                 </div>
                 <div>
-                  <CardTitle className="text-2xl gradient-text">{planConfig.name}</CardTitle>
-                  <CardDescription className="text-base">Monthly Subscription</CardDescription>
+                  <CardTitle className="text-xl">
+                    {checkoutType === 'api_pass'
+                      ? `${API_TIER_SPECS[apiTier].name} — ${apiPkg.durationLabel}`
+                      : `${planConfig.name} Plan`}
+                  </CardTitle>
+                  <CardDescription>
+                    {checkoutType === 'api_pass'
+                      ? `${API_TIER_SPECS[apiTier].rpm} rq/min · ${API_TIER_SPECS[apiTier].dailyCreditsDisplay}`
+                      : `${planConfig.creditsDisplay} credits · ${planConfig.uploadDisplay} uploads`}
+                  </CardDescription>
                 </div>
               </div>
-              <div className="flex items-baseline gap-2 mt-4">
-                {couponApplied && couponApplied.discount === 100 ? (
-                  <span className="text-5xl font-bold gradient-text">Free!</span>
-                ) : (
-                  <>
-                    {couponApplied && (
-                      <span className="text-2xl line-through text-muted-foreground">
-                        {planConfig.currency}{planConfig.price.toLocaleString('en-IN')}
-                      </span>
-                    )}
-                    <span className="text-5xl font-bold gradient-text">
-                      {planConfig.currency}{finalPrice.toLocaleString('en-IN')}
-                    </span>
-                    <span className="text-muted-foreground">/{planConfig.interval}</span>
-                  </>
-                )}
+              <div className="mt-4">
+                <span className="text-3xl font-bold gradient-text">
+                  ₹{finalPrice.toLocaleString('en-IN')}
+                </span>
               </div>
-              {couponApplied && (
-                <div className="mt-2 inline-flex items-center gap-1.5 bg-green-500/10 text-green-600 dark:text-green-400 px-3 py-1 rounded-full text-sm font-medium">
-                  <Tag className="w-3.5 h-3.5" />
-                  {couponApplied.label}
+            </CardHeader>
+
+            <CardContent className="pt-5 space-y-4">
+              {checkoutType === 'plan' && planId === 'enterprise' && (
+                <div className="p-3.5 rounded-xl bg-muted/50 border border-border space-y-3">
+                  <div>
+                    <label className="text-xs font-semibold flex justify-between">
+                      <span>Credits per Seat (55k – 160k):</span>
+                      <span className="text-primary font-bold">{enterpriseCreditsPerSeat.toLocaleString()}</span>
+                    </label>
+                    <input
+                      type="range"
+                      min={55000}
+                      max={160000}
+                      step={5000}
+                      value={enterpriseCreditsPerSeat}
+                      onChange={(e) => setEnterpriseCreditsPerSeat(Number(e.target.value))}
+                      className="w-full mt-1"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold flex justify-between">
+                      <span>Number of Seats:</span>
+                      <span className="text-primary font-bold">{enterpriseSeats}</span>
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={100}
+                      value={enterpriseSeats}
+                      onChange={(e) => setEnterpriseSeats(Math.max(1, Number(e.target.value)))}
+                      className="w-full mt-1 px-2 py-1 rounded border bg-background text-sm"
+                    />
+                  </div>
                 </div>
               )}
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                <h3 className="font-semibold text-lg flex items-center gap-2">
-                  <Check className="w-5 h-5 text-primary" />
-                  What's Included
-                </h3>
-                <ul className="space-y-3">
-                  {planConfig.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-3">
-                      <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                      <span className="text-foreground">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+
+              <ul className="space-y-2 text-xs sm:text-sm">
+                {(checkoutType === 'api_pass'
+                  ? [
+                      `${API_TIER_SPECS[apiTier].rpm} Requests per minute`,
+                      `${API_TIER_SPECS[apiTier].dailyCreditsDisplay} quota`,
+                      `Active for ${apiPkg.durationLabel}`,
+                      'Instant key activation',
+                    ]
+                  : planConfig.features.filter((f) => f.included).map((f) => f.text)
+                ).map((item, i) => (
+                  <li key={i} className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-primary shrink-0" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
             </CardContent>
           </Card>
 
-          {/* Payment Method */}
-          <Card className="border-2 border-border shadow-2xl">
-            <CardHeader className="bg-gradient-to-br from-accent/10 to-primary/10">
-              <CardTitle className="text-2xl gradient-text">Secure Payment</CardTitle>
-              <CardDescription className="text-base">
-                Powered by Stripe — Industry-leading security
-              </CardDescription>
+          <Card className="border border-border shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-xl">Stripe Checkout</CardTitle>
+              <CardDescription>256-bit SSL encrypted payment processing</CardDescription>
             </CardHeader>
-            <CardContent className="pt-6 space-y-6">
-              {/* Coupon Code */}
-              <div className="space-y-2">
-                <label className="text-sm font-semibold flex items-center gap-1.5">
-                  <Tag className="w-4 h-4 text-primary" />
-                  Coupon / Offer Code
+            <CardContent className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold flex items-center gap-1">
+                  <Tag className="w-3.5 h-3.5 text-primary" /> Coupon / Offer Code
                 </label>
                 <div className="flex gap-2">
                   <Input
                     value={couponCode}
-                    onChange={e => { setCouponCode(e.target.value.toUpperCase()); setCouponApplied(null); }}
-                    placeholder="e.g. FREEMONTH"
-                    className="h-11 border-2 font-mono uppercase"
-                    disabled={couponLoading}
-                    onKeyDown={e => e.key === 'Enter' && handleApplyCoupon()}
+                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                    placeholder="E.G. FREEMONTH"
+                    className="uppercase font-mono text-xs flex-1 min-w-0"
                   />
-                  <Button
-                    variant="outline"
-                    onClick={handleApplyCoupon}
-                    disabled={couponLoading || !couponCode.trim()}
-                    className="h-11 px-4 border-2 shrink-0"
-                  >
-                    {couponLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Apply'}
+                  <Button variant="outline" onClick={handleApplyCoupon} className="shrink-0">
+                    Apply
                   </Button>
                 </div>
-                {couponApplied && (
-                  <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
-                    <Check className="w-3.5 h-3.5" />
-                    Discount applied successfully
-                  </p>
-                )}
               </div>
 
-              {/* Payment Method Info */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 p-4 rounded-xl border-2 border-primary/20 bg-primary/5">
-                  <CreditCard className="w-8 h-8 text-primary" />
-                  <div>
-                    <h4 className="font-semibold">Credit / Debit Card</h4>
-                    <p className="text-sm text-muted-foreground">Visa, Mastercard, UPI, Net Banking</p>
-                  </div>
+              <div className="p-3.5 rounded-xl border border-border space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Account:</span>
+                  <span className="font-medium">{profile?.email || 'Current User'}</span>
                 </div>
-
-                {/* Security Features */}
-                <div className="space-y-3 p-5 bg-gradient-to-br from-primary/5 to-accent/5 rounded-2xl border-2 border-primary/10">
-                  <h4 className="font-semibold flex items-center gap-2">
-                    <Shield className="w-5 h-5 text-primary" />
-                    Secure &amp; Encrypted
-                  </h4>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    {['256-bit SSL encryption', 'PCI DSS compliant', 'No card details stored', 'Cancel anytime'].map(t => (
-                      <li key={t} className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-primary" />{t}
-                      </li>
-                    ))}
-                  </ul>
+                <div className="flex justify-between font-semibold text-sm pt-2 border-t">
+                  <span>Total Due:</span>
+                  <span className="text-primary">₹{finalPrice.toLocaleString('en-IN')}</span>
                 </div>
+              </div>
 
-                {/* Billing Summary */}
-                <div className="space-y-3 p-5 bg-card rounded-2xl border-2 border-border">
-                  <h4 className="font-semibold flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-primary" />
-                    Billing Summary
-                  </h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Plan:</span>
-                      <span className="font-semibold">{planConfig.name}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Billing Cycle:</span>
-                      <span className="font-semibold">Monthly</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Original Price:</span>
-                      <span className="font-semibold">{planConfig.currency}{planConfig.price.toLocaleString('en-IN')}/mo</span>
-                    </div>
-                    {couponApplied && (
-                      <div className="flex justify-between text-green-600 dark:text-green-400">
-                        <span>Coupon Discount:</span>
-                        <span className="font-semibold">−{couponApplied.discount}%</span>
-                      </div>
-                    )}
-                    <div className="pt-3 mt-3 border-t border-border flex justify-between items-center">
-                      <span className="font-semibold">Total Due Today:</span>
-                      <span className="text-2xl font-bold gradient-text">
-                        {finalPrice === 0 ? 'FREE' : `${planConfig.currency}${finalPrice.toLocaleString('en-IN')}`}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>Next Billing:</span>
-                      <span>{new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN')}</span>
-                    </div>
-                  </div>
-                </div>
+              <Button
+                onClick={handleStripeCheckout}
+                disabled={isProcessing}
+                className="w-full h-12 font-semibold text-sm gap-2"
+              >
+                {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                {finalPrice === 0 ? 'Activate Immediately' : 'Proceed to Stripe Checkout'}
+              </Button>
 
-                {/* Checkout Button */}
-                <Button
-                  onClick={handleCheckout}
-                  disabled={isProcessing}
-                  className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity"
-                  size="lg"
-                >
-                  {isProcessing ? (
-                    <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Processing…</>
-                  ) : finalPrice === 0 ? (
-                    <><Check className="w-5 h-5 mr-2" />Activate Free Plan</>
-                  ) : (
-                    <><CreditCard className="w-5 h-5 mr-2" />Proceed to Secure Checkout</>
-                  )}
-                </Button>
-
-                <p className="text-xs text-center text-muted-foreground">
-                  By proceeding, you agree to our Terms of Service and Privacy Policy.
-                  You can cancel your subscription at any time.
-                </p>
+              <div className="flex items-center justify-center gap-4 text-[11px] text-muted-foreground pt-2">
+                <span className="flex items-center gap-1"><Shield className="w-3.5 h-3.5" /> Stripe Verified</span>
+                <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> Instant Credits</span>
               </div>
             </CardContent>
           </Card>
-        </div>
-
-        {/* Trust Badges */}
-        <div className="mt-12 text-center">
-          <p className="text-sm text-muted-foreground mb-4">Trusted by thousands of users worldwide</p>
-          <div className="flex items-center justify-center gap-8 flex-wrap">
-            {[
-              { icon: Shield, label: 'Secure Payment' },
-              { icon: Check, label: 'Money-back Guarantee' },
-              { icon: Clock, label: 'Cancel Anytime' },
-            ].map(({ icon: Icon, label }) => (
-              <div key={label} className="flex items-center gap-2 text-muted-foreground">
-                <Icon className="w-5 h-5" />
-                <span className="text-sm">{label}</span>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </div>
