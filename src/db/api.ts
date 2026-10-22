@@ -129,12 +129,47 @@ export const messagesApi = {
 // Profiles API
 // ==========================================
 export const profilesApi = {
+  async getCurrentProfile(): Promise<Profile | null> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (data) return data as Profile;
+
+    // Fallback: create default profile row if one hasn't been created yet
+    const newProfile: Partial<Profile> = {
+      id: user.id,
+      email: user.email || '',
+      username: user.email?.split('@')[0] || 'User',
+      full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+      role: 'user',
+      plan: 'free',
+      credits: 11000,
+      upload_limit_mb: 512,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data: created } = await supabase
+      .from('profiles')
+      .insert(newProfile)
+      .select()
+      .maybeSingle();
+
+    return (created as Profile) || (newProfile as Profile);
+  },
+
   async getProfile(userId: string): Promise<Profile | null> {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (error) return null;
     return data as Profile;
